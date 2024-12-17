@@ -26,8 +26,8 @@ const bird = {
 const GRAVITY = 0.5;
 const FLAP_SPEED = -8;
 const PIPE_SPEED = 2;
-const PIPE_SPAWN_INTERVAL = 1500;
-const PIPE_GAP = 150;
+const PIPE_SPAWN_INTERVAL = 1800;
+const PIPE_GAP = 180;
 const PIPE_WIDTH = 52;
 const PIPE_HEAD_HEIGHT = 24;  // Height of pipe's end cap
 
