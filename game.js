@@ -9,7 +9,6 @@ let canvas, ctx;
 let currentWidth, currentHeight;
 let SCALE_FACTOR = 1;
 let isGameStarted = false;
-let bird, pipes, score;
 let gameOver = false;
 let frameCount = 0;
 
