@@ -1,5 +1,120 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+// Constants for different platforms
+const MOBILE_WIDTH = 320;
+const MOBILE_HEIGHT = 568;
+const DESKTOP_WIDTH = 480;
+const DESKTOP_HEIGHT = 720;
+
+// Game variables
+let canvas, ctx;
+let currentWidth, currentHeight;
+let SCALE_FACTOR = 1;
+let isGameStarted = false;
+let bird, pipes, score;
+let gameOver = false;
+let frameCount = 0;
+
+// Platform detection
+function isMobileDevice() {
+    return ('ontouchstart' in window) || 
+           (navigator.maxTouchPoints > 0) || 
+           window.innerWidth <= 768;
+}
+
+// Initialize canvas with platform-specific settings
+function initializeCanvas() {
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    
+    // Set dimensions based on platform
+    currentWidth = isMobileDevice() ? MOBILE_WIDTH : DESKTOP_WIDTH;
+    currentHeight = isMobileDevice() ? MOBILE_HEIGHT : DESKTOP_HEIGHT;
+    
+    resizeCanvas();
+}
+
+// Handle canvas resizing
+function resizeCanvas() {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    
+    // Adjust scale factor for better fit
+    SCALE_FACTOR = Math.min(
+        windowWidth / currentWidth,
+        windowHeight / currentHeight
+    ) * (isMobileDevice() ? 0.95 : 0.85);
+    
+    canvas.width = currentWidth * SCALE_FACTOR;
+    canvas.height = currentHeight * SCALE_FACTOR;
+    
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
+}
+
+// Setup controls for both platforms
+function setupControls() {
+    // Remove existing listeners
+    canvas.removeEventListener('touchstart', handleJump);
+    canvas.removeEventListener('click', handleJump);
+    document.removeEventListener('keydown', handleKeyDown);
+    
+    // Universal jump handler
+    function handleJump(e) {
+        if (!isGameStarted || !bird || gameOver) return;
+        
+        if (e.type === 'touchstart') {
+            e.preventDefault();
+        }
+        bird.jump();
+    }
+    
+    // Keyboard controls for desktop
+    function handleKeyDown(e) {
+        if (!isGameStarted || !bird || gameOver) return;
+        if (e.code === 'Space' || e.key === ' ' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            bird.jump();
+        }
+    }
+    
+    // Add platform-specific controls
+    canvas.addEventListener('touchstart', handleJump, { passive: false });
+    canvas.addEventListener('click', handleJump);
+    document.addEventListener('keydown', handleKeyDown);
+}
+
+// Update game parameters based on platform
+function updateGameElements() {
+    const isMobile = isMobileDevice();
+    
+    // Adjust parameters for larger canvas
+    PIPE_GAP = isMobile ? 180 : 180;
+    GAME_SPEED = isMobile ? 2 : 2.5;
+    PIPE_SPACING = 550;
+    PIPE_FREQUENCY = 280;
+    
+    if (bird) {
+        bird.gravity = isMobile ? 0.3 : 0.4;
+        bird.jump_speed = isMobile ? -5 : -6;
+        // Adjust initial bird position for larger canvas
+        bird.y = currentHeight / 2;
+    }
+}
+
+// Initialize game
+function init() {
+    initializeCanvas();
+    setupControls();
+    createNameInput();
+    
+    // Handle mobile-specific behaviors
+    if (isMobileDevice()) {
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+}
 
 // Game states
 const GAME_STATE = {
