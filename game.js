@@ -204,23 +204,51 @@ const PIPE_HEAD_HEIGHT = 24;  // Height of pipe's end cap
 // Pipes array
 let pipes = [];
 
-// Add at the top with other constants
+// Update image loading with simpler paths and better error handling
 const birdImage = new Image();
 const pipeImage = new Image();
 
+// Simple direct paths since images are in root directory
 birdImage.src = 'bird.png';
 pipeImage.src = 'pipe-green.png';
 
-// Add error handling for images
-birdImage.onerror = function() {
-    console.error('Error loading bird image');
-    birdImage.failed = true;
-};
+// Add loading state tracking
+let imagesLoaded = false;
+let imageLoadAttempted = false;
 
-pipeImage.onerror = function() {
-    console.error('Error loading pipe image');
-    pipeImage.failed = true;
-};
+function loadImages() {
+    if (imageLoadAttempted) return;
+    imageLoadAttempted = true;
+    
+    let loadedImages = 0;
+    const totalImages = 2;
+    
+    function handleImageLoad() {
+        loadedImages++;
+        if (loadedImages === totalImages) {
+            imagesLoaded = true;
+            console.log('All images loaded successfully');
+        }
+    }
+
+    birdImage.onload = handleImageLoad;
+    pipeImage.onload = handleImageLoad;
+    
+    birdImage.onerror = function() {
+        console.error('Error loading bird image from:', birdImage.src);
+        birdImage.failed = true;
+        handleImageLoad(); // Still count as loaded to allow fallback
+    };
+
+    pipeImage.onerror = function() {
+        console.error('Error loading pipe image from:', pipeImage.src);
+        pipeImage.failed = true;
+        handleImageLoad(); // Still count as loaded to allow fallback
+    };
+}
+
+// Call loadImages at initialization
+loadImages();
 
 // Create new pipe
 function createPipe() {
