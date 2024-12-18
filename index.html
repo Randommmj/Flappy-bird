@@ -2,23 +2,54 @@
 <html>
 <head>
     <title>Joyce's Flappy Bird</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        canvas {
-            border: 1px solid black;
-            display: block;
-            margin: 0 auto;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: fixed;
+        }
+        
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             background-color: #f0f0f0;
+            touch-action: none;
+        }
+        
+        canvas {
+            border: 1px solid black;
+            display: block;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        h1 {
+            margin: 10px 0;
+            font-size: 24px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 20px;
+                margin: 5px 0;
+            }
         }
     </style>
 </head>
 <body>
     <h1>Joyce's Flappy Bird</h1>
-    <canvas id="gameCanvas" width="320" height="480"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <script src="game.js"></script>
 </body>
 </html> 

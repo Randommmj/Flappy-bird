@@ -15,9 +15,9 @@ let frameCount = 0;
 
 // Platform detection
 function isMobileDevice() {
-    return ('ontouchstart' in window) || 
-           (navigator.maxTouchPoints > 0) || 
-           window.innerWidth <= 768;
+    return (('ontouchstart' in window) ||
+        (navigator.maxTouchPoints > 0) ||
+        (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)));
 }
 
 // Initialize canvas with platform-specific settings
@@ -37,17 +37,43 @@ function resizeCanvas() {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     
-    // Adjust scale factor for better fit
-    SCALE_FACTOR = Math.min(
-        windowWidth / currentWidth,
-        windowHeight / currentHeight
-    ) * (isMobileDevice() ? 0.95 : 0.85);
+    // Set canvas size while maintaining aspect ratio
+    if (isMobileDevice()) {
+        // For mobile, use device pixel ratio for sharper rendering
+        const pixelRatio = window.devicePixelRatio || 1;
+        
+        // Set display size
+        canvas.style.width = `${windowWidth}px`;
+        canvas.style.height = `${windowHeight}px`;
+        
+        // Set actual canvas size
+        canvas.width = windowWidth * pixelRatio;
+        canvas.height = windowHeight * pixelRatio;
+        
+        // Scale context
+        ctx.scale(pixelRatio, pixelRatio);
+        
+        // Update current dimensions
+        currentWidth = windowWidth;
+        currentHeight = windowHeight;
+    } else {
+        // Desktop sizing remains the same
+        SCALE_FACTOR = Math.min(
+            windowWidth / DESKTOP_WIDTH,
+            windowHeight / DESKTOP_HEIGHT
+        ) * 0.85;
+        
+        canvas.width = DESKTOP_WIDTH * SCALE_FACTOR;
+        canvas.height = DESKTOP_HEIGHT * SCALE_FACTOR;
+        
+        currentWidth = DESKTOP_WIDTH;
+        currentHeight = DESKTOP_HEIGHT;
+        
+        ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
+    }
     
-    canvas.width = currentWidth * SCALE_FACTOR;
-    canvas.height = currentHeight * SCALE_FACTOR;
-    
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(SCALE_FACTOR, SCALE_FACTOR);
+    // Update game elements for new dimensions
+    updateGameElements();
 }
 
 // Setup controls for both platforms
@@ -57,14 +83,18 @@ function setupControls() {
     canvas.removeEventListener('click', handleJump);
     document.removeEventListener('keydown', handleKeyDown);
     
-    // Universal jump handler
+    // Universal jump handler with improved touch handling
     function handleJump(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         if (!isGameStarted || !bird || gameOver) return;
         
-        if (e.type === 'touchstart') {
-            e.preventDefault();
-        }
+        // Prevent double firing on mobile
+        if (e.type === 'touchstart' && e.touches.length > 1) return;
+        
         bird.jump();
+        return false;
     }
     
     // Keyboard controls for desktop
@@ -77,7 +107,10 @@ function setupControls() {
     }
     
     // Add platform-specific controls
-    canvas.addEventListener('touchstart', handleJump, { passive: false });
+    canvas.addEventListener('touchstart', handleJump, { 
+        passive: false,
+        capture: true 
+    });
     canvas.addEventListener('click', handleJump);
     document.addEventListener('keydown', handleKeyDown);
 }
@@ -86,17 +119,40 @@ function setupControls() {
 function updateGameElements() {
     const isMobile = isMobileDevice();
     
-    // Adjust parameters for larger canvas
-    PIPE_GAP = isMobile ? 180 : 180;
-    GAME_SPEED = isMobile ? 2 : 2.5;
-    PIPE_SPACING = 550;
-    PIPE_FREQUENCY = 280;
-    
-    if (bird) {
-        bird.gravity = isMobile ? 0.3 : 0.4;
-        bird.jump_speed = isMobile ? -5 : -6;
-        // Adjust initial bird position for larger canvas
-        bird.y = currentHeight / 2;
+    if (isMobile) {
+        // Adjust physics for mobile
+        GRAVITY = 0.4;
+        FLAP_SPEED = -6;
+        PIPE_SPEED = 1.5;
+        PIPE_SPAWN_INTERVAL = 2000;
+        PIPE_GAP = currentHeight * 0.25; // Relative to screen height
+        
+        // Adjust bird size and position
+        if (bird) {
+            bird.width = currentWidth * 0.1;
+            bird.height = bird.width;
+            bird.x = currentWidth * 0.2;
+            bird.y = currentHeight / 2;
+        }
+        
+        // Adjust pipe dimensions
+        PIPE_WIDTH = currentWidth * 0.15;
+    } else {
+        // Desktop values
+        GRAVITY = 0.5;
+        FLAP_SPEED = -8;
+        PIPE_SPEED = 2;
+        PIPE_SPAWN_INTERVAL = 1800;
+        PIPE_GAP = 180;
+        
+        if (bird) {
+            bird.width = 30;
+            bird.height = 30;
+            bird.x = 50;
+            bird.y = currentHeight / 2;
+        }
+        
+        PIPE_WIDTH = 52;
     }
 }
 
@@ -510,6 +566,22 @@ function saveHighScore(name, score) {
         return [];
     }
 }
+
+// Add window resize listener
+window.addEventListener('resize', function() {
+    resizeCanvas();
+}, { passive: true });
+
+// Prevent unwanted mobile behaviors
+document.addEventListener('touchmove', function(e) {
+    if (e.target.tagName !== 'INPUT') {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+}, { passive: false });
 
 // Start the game
 init(); 
